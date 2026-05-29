@@ -1,0 +1,8 @@
+[package]
+name = "plato-transport"
+version = "0.1.0"
+edition = "2021"
+description = "Sensory transport abstraction for Plato — in-process, Unix socket, and TCP transport for sense modules"
+license = "MIT"
+
+[dependencies]
