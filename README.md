@@ -1,16 +1,18 @@
-# plato-transport
+# plato-transport — Sense Transport Abstraction
 
-Sensory transport abstraction for the Plato project — how sense modules communicate whether they're in the same process, on the same machine via Unix socket, or across the network via TCP.
+Unified transport layer for sense modules — whether they're in the same process, on the same machine via Unix socket, or across the network via TCP. One trait, three implementations, zero friction.
 
-## Features
+**Part of the [Plato](https://github.com/SuperInstance/plato-shell) ecosystem.**
 
-- **`SenseTransport` trait** — unified interface for `send`, `recv`, `freshness`, and `is_connected`
-- **`InProcessTransport`** — zero-copy channel-based transport for embedded/single-process use
-- **`UnixSocketTransport`** — local IPC with credential passing (simulated for testing)
-- **`NetworkTransport`** — TCP-based remote sense modules (simulated for testing)
-- **`Freshness`** — `Hot` (real-time), `Warm { poll_interval_ms }`, `Cold { snapshot_age_ms }`
-- **`ShadowCache`** — TTL-based cache keyed by `(sense_module, resource_id)`
-- **`TransportPolicy`** — command allowlists and rate limiting
+## What This Gives You
+
+- **`SenseTransport` trait** — `send`, `recv`, `freshness`, `is_connected` for any transport
+- **InProcessTransport** — zero-copy channels for embedded/single-process use
+- **UnixSocketTransport** — local IPC with credential passing
+- **NetworkTransport** — TCP-based remote sense modules
+- **ShadowCache** — TTL-based cache keyed by `(sense_module, resource_id)`
+- **TransportPolicy** — command allowlists and rate limiting
+- **Freshness levels** — Hot (real-time), Warm (polling), Cold (snapshot)
 
 ## Quick Start
 
@@ -24,12 +26,22 @@ let tcp = Transport::tcp("192.168.1.100:9000");
 
 // Use the ShadowCache
 let cache = ShadowCache::new();
-cache.put("vision", "camera_0", "{\"objects\": 5}".into(), std::time::Duration::from_secs(30));
+cache.put("vision", "camera_0", "{\"objects\": 5}".into(), Duration::from_secs(30));
 let shadow = cache.get("vision", "camera_0");
 
 // Enforce policy
 let policy = TransportPolicy::allow_only(vec!["query:".into()], Some(RateLimit { max_commands: 100, window_ms: 1000 }));
-policy.check("query:sensors").unwrap();
+policy.check("query:sensors")?;
+```
+
+## How It Fits
+
+Moves sense data between modules. [plato-vision](https://github.com/SuperInstance/plato-vision) and [plato-sonar-text](https://github.com/SuperInstance/plato-sonar-text) produce shadows; transport delivers them to [plato-correlator](https://github.com/SuperInstance/plato-correlator). Works with [plato-policy](https://github.com/SuperInstance/plato-policy) for access control.
+
+## Testing
+
+```bash
+cargo test
 ```
 
 ## License
